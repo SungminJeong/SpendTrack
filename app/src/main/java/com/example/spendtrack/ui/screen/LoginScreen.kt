@@ -1,31 +1,22 @@
 package com.example.spendtrack.ui.screen
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.spendtrack.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
 
     var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -34,7 +25,7 @@ fun LoginScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
 
-        Text("Spendtrack", style = MaterialTheme.typography.headlineMedium)
+        Text("Finance Tracker", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(Modifier.height(24.dp))
 
@@ -51,6 +42,7 @@ fun LoginScreen(navController: NavController) {
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -58,13 +50,31 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = {}
+            onClick = {
+
+                scope.launch {
+
+                    val success =
+                        authViewModel.login(name, password)
+
+                    if (success) {
+
+                        val userId =
+                            authViewModel.currentUserId ?: 0
+
+                        navController.navigate("list/$userId")
+                    }
+                }
+
+            }
         ) {
             Text("Login")
         }
 
         TextButton(
-            onClick = {}
+            onClick = {
+                navController.navigate("register")
+            }
         ) {
             Text("Create Account")
         }

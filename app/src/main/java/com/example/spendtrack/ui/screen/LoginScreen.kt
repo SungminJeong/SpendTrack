@@ -25,7 +25,7 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel) {
         verticalArrangement = Arrangement.Center
     ) {
 
-        Text("Finance Tracker", style = MaterialTheme.typography.headlineMedium)
+        Text("SpendTrack", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(Modifier.height(24.dp))
 

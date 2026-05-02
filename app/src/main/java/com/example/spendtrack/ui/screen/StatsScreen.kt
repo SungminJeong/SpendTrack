@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import com.example.spendtrack.viewmodel.TransactionViewModel
@@ -155,6 +156,44 @@ fun StatsScreen(
             )
         }
 
+        ////////////////////////////////////////////////////////////////////
+        val monthlyData by viewModel
+            .simpleMonthlyComparison(userId)
+            .collectAsState(initial = emptyList())
+
+
+
+        val sorted = monthlyData.sortedBy { it.month }
+
+
+        val current = sorted.lastOrNull()?.total ?: 0.0
+        val previous = sorted.dropLast(1).lastOrNull()?.total ?: 0.0
+
+        val changeRate =
+            if (previous == 0.0) 0.0
+            else ((current - previous) / previous) * 100
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "📊 Monthly Comparison",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text("This month: ${"%.2f".format(current)}")
+        Text("Last month: ${"%.2f".format(previous)}")
+
+        Text(
+            text = "Change: ${"%.1f".format(changeRate)}%",
+            color = if (changeRate >= 0)
+                MaterialTheme.colorScheme.error
+            else
+                MaterialTheme.colorScheme.primary
+        )
+        ///////////////////////////////////////////////////////////
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // ================= BarChart =================
@@ -165,13 +204,20 @@ fun StatsScreen(
             Text("No data available")
         } else {
 
-            val entries = monthlySummary.mapIndexed { index, item ->
+            val entries = sorted.mapIndexed { index, item ->
                 BarEntry(index.toFloat(), item.total.toFloat())
             }
 
+
+
             val dataSet = BarDataSet(entries, "Monthly Expense").apply {
-                colors = ColorTemplate.MATERIAL_COLORS.toList()
+                colors = listOf(
+                    androidx.compose.ui.graphics.Color(0xFF9E9E9E).toArgb(),
+                    androidx.compose.ui.graphics.Color(0xFF2196F3).toArgb()
+                )
             }
+
+
 
             val data = BarData(dataSet)
 
@@ -184,10 +230,14 @@ fun StatsScreen(
                     chart.data = data
                     chart.description.isEnabled = false
 
-                    // 🔥 X축 월 표시
+                    chart.xAxis.valueFormatter =
+                        IndexAxisValueFormatter(sorted.map { it.month })
+                    /*
                     chart.xAxis.valueFormatter = IndexAxisValueFormatter(
                         monthlySummary.map { it.month }
                     )
+                     */
+
 
                     chart.animateY(1000)
                     chart.invalidate()

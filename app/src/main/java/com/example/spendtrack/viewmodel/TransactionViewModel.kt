@@ -21,7 +21,7 @@ class TransactionViewModel(
     val selectedMonth: StateFlow<Long?> = _selectedMonth
     /////////////////////////////////////////////////////////////////
 
-    // [기존]
+
     fun add(transaction: Transaction) {
 
         viewModelScope.launch {
@@ -29,7 +29,6 @@ class TransactionViewModel(
         }
     }
 
-    // [추가] UPDATE 기능
     fun update(transaction: Transaction) {
 
         viewModelScope.launch {
@@ -57,13 +56,13 @@ class TransactionViewModel(
     fun monthlySummary(userId: Int) =
         repository.getMonthlySummary(userId)
 
-    // ✅ StateFlow 필터 상태
+
     private val selectedCategoryFlow = MutableStateFlow<String?>(null)
     private val startDateFlow = MutableStateFlow<Long?>(null)
     private val endDateFlow = MutableStateFlow<Long?>(null)
 
 
-    // ✅ 필터 설정
+
     fun setCategoryFilter(category: String?) {
         selectedCategoryFlow.value = category
         startDateFlow.value = null
@@ -82,7 +81,7 @@ class TransactionViewModel(
         endDateFlow.value = null
     }
 
-    // ✅ 핵심: combine으로 자동 필터링
+
     fun transactions(userId: Int): Flow<List<Transaction>> {
 
         val baseFlow = repository.getTransactions(userId)
@@ -156,4 +155,37 @@ class TransactionViewModel(
         )
     }
 
+    fun simpleMonthlyComparison(userId: Int) =
+        repository.getMonthlySummary(userId)
+
+    ///////////////////////////////
+    data class MonthlyComparison(
+        val current: Double,
+        val previous: Double,
+        val changeRate: Double
+    )
+
+    fun monthlyComparison(userId: Int): Flow<MonthlyComparison> {
+        return repository.getMonthlySummary(userId)
+            .map { list ->
+
+                val sorted = list.sortedBy { it.month }
+
+                val lastTwo = sorted.takeLast(2)
+
+                val previous = lastTwo.getOrNull(0)?.total ?: 0.0
+                val current = lastTwo.getOrNull(1)?.total ?: 0.0
+
+                val change =
+                    if (previous == 0.0) 0.0
+                    else ((current - previous) / previous) * 100
+
+                MonthlyComparison(
+                    current = current,
+                    previous = previous,
+                    changeRate = change
+                )
+            }
+    }
+    ///////////////////////////////
 }

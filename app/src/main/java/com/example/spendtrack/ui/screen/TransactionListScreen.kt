@@ -15,17 +15,34 @@ import com.example.spendtrack.ui.components.CategoryDropdown
 
 @Composable
 fun TransactionListScreen(navController: NavController, viewModel: TransactionViewModel, userId: Int) {
+    /////////////++++++++++++++++++//////////////
+    fun monthRange(time: Long): Pair<Long, Long> {
+        val cal = java.util.Calendar.getInstance()
+        cal.timeInMillis = time
 
+        cal.set(java.util.Calendar.DAY_OF_MONTH, 1)
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        cal.set(java.util.Calendar.MINUTE, 0)
+        cal.set(java.util.Calendar.SECOND, 0)
+        cal.set(java.util.Calendar.MILLISECOND, 0)
 
-    // [추가] Flow → Compose 상태 변환
+        val start = cal.timeInMillis
+
+        cal.add(java.util.Calendar.MONTH, 1)
+        val end = cal.timeInMillis
+
+        return start to end
+    }
+    /////////////++++++++++++++++++//////////////
+    //  Flow → Compose
     val transactions by viewModel
         .transactions(userId)
         .collectAsState(initial = emptyList())
-
+/*
     val totalExpense = transactions
         .filter { it.type == "expense" }
         .sumOf { it.amount }
-
+*/
 
     val currentMonthStart = remember {
         val calendar = java.util.Calendar.getInstance()
@@ -37,6 +54,30 @@ fun TransactionListScreen(navController: NavController, viewModel: TransactionVi
     }
 
     var selectedMonth by remember { mutableStateOf(currentMonthStart) }
+
+    /////////////++++++++++++++++++//////////////
+    val (start, end) = monthRange(selectedMonth)
+    val filteredTransactions = transactions.filter {
+        it.date >= start && it.date < end
+    }
+    /*
+    val filteredTransactions = transactions.filter {
+        val calendar = java.util.Calendar.getInstance()
+        calendar.timeInMillis = selectedMonth
+        val start = calendar.timeInMillis
+
+        calendar.add(java.util.Calendar.MONTH, 1)
+        val end = calendar.timeInMillis
+
+        it.date >= start && it.date < end
+    }
+
+     */
+    /////////////++++++++++++++++++//////////////
+
+    val totalExpense = filteredTransactions//transactions
+        .filter { it.type == "expense" }
+        .sumOf { it.amount }
 
     LaunchedEffect(Unit) {
         val calendar = java.util.Calendar.getInstance()
@@ -124,7 +165,7 @@ fun TransactionListScreen(navController: NavController, viewModel: TransactionVi
                                 selectedMonth = month
                                 expanded = false
 
-                                // 🔥 핵심 필터 적용
+
                                 val calendar = java.util.Calendar.getInstance()
                                 calendar.timeInMillis = month
 
@@ -224,10 +265,26 @@ fun TransactionListScreen(navController: NavController, viewModel: TransactionVi
             ) {
                 Text("Clear Filter")
             }
+            ///////////////////////+++++++++++++++++//////////////////////
+            val (start, end) = monthRange(selectedMonth)
+            val filteredTransactions = transactions.filter {
+                it.date >= start && it.date < end
+                /*
+                val calendar = java.util.Calendar.getInstance()
+                calendar.timeInMillis = selectedMonth
+                val start = calendar.timeInMillis
 
+                calendar.add(java.util.Calendar.MONTH, 1)
+                val end = calendar.timeInMillis
+
+                it.date >= start && it.date < end
+
+                 */
+            }
+            ///////////////////////+++++++++++++++++//////////////////////
             LazyColumn {
 
-                items(transactions) {transaction ->
+                items(filteredTransactions) {transaction ->
 
                     TransactionItem(
                         transaction = transaction,
